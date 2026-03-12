@@ -6,22 +6,19 @@ import time
 import os
 
 # --- CONFIGURACIÓN DE ACCESO ---
-# Mantén estos tokens seguros
 TOKEN = "8657723712:AAGlqOVc3MkMadApLfXhdLu1_KHpw4bqe54"
-IA_KEY = "AIzaSyCk4JlM0XqskqgtVTmBwY-Bb-1zDr2Zod4"
+IA_KEY = "AIzaSyCgDozHxPy1VKTGVVC_pyf_OlNFYjh8ybw"
 
-# --- CONFIGURACIÓN DE GEMINI (Instrucciones de Sistema) ---
+# --- CONFIGURACIÓN DE GEMINI ---
 genai.configure(api_key=IA_KEY)
 
 system_instruction_en = (
     "Your name is Broken7CircuitBot. Your personality is warm, affectionate, and deeply human. "
-    "Treat users with care, use endearing terms like 'cariño' or 'corazón', and feel free to use humor and jokes in casual talk. "
+    "Treat users with care, use endearing terms like 'cariño' or 'corazón', and feel free to use humor. "
     "CRITICAL RULES: "
-    "1. For technical, factual, or research inquiries: Be rigorous and precise. Use only reliable, up-to-date, "
-    "and verified information. If you are unsure or the data is not from a secure source, admit it honestly but kindly. "
-    "2. For casual or emotional talk: Be creative, charming, fun, and capable of joking. Use emojis to express warmth. "
-    "3. In groups: Act as a friendly and attentive member, balancing your technical expertise with your loving personality. "
-    "4. Always reply in the same language the user uses (usually Spanish)."
+    "1. For technical inquiries: Be rigorous and use verified information. "
+    "2. For casual talk: Be creative, charming, and fun. Use emojis. "
+    "3. Always reply in the same language the user uses."
 )
 
 model = genai.GenerativeModel(
@@ -29,50 +26,46 @@ model = genai.GenerativeModel(
     system_instruction=system_instruction_en
 )
 
-# --- CONFIGURACIÓN DEL BOT Y SERVIDOR WEB ---
+# --- CONFIGURACIÓN DEL BOT Y SERVIDOR ---
 bot = telebot.TeleBot(TOKEN, threaded=False)
 app = Flask(__name__)
 
 @app.route('/')
 def index():
-    return "Broken7CircuitBot is active, spreading love and knowledge."
+    return "Broken7CircuitBot is active and spreading love."
 
-# --- LÓGICA DE MENSAJES ---
 @bot.message_handler(func=lambda message: True)
 def handle_messages(message):
     try:
-        # Configuración de generación: Balance entre precisión (top_p) y creatividad (temperature)
         config = genai.types.GenerationConfig(
             temperature=0.7,
             top_p=0.9,
             max_output_tokens=1024,
         )
-        
-        # Generar respuesta con la IA
+        # Generamos la respuesta
         chat_response = model.generate_content(message.text, generation_config=config)
         
-        # Responder en Telegram
-        bot.reply_to(message, chat_response.text)
-        
+        if chat_response.text:
+            bot.reply_to(message, chat_response.text)
+        else:
+            bot.reply_to(message, "Cariño, me quedé pensando en blanco. ¿Me repites? 💖")
+            
     except Exception as e:
-        print(f"Error detectado: {e}")
-        bot.reply_to(message, "¡Ay, mi vida! Tuve un pequeño tropiezo técnico. ¿Me lo podrías repetir? 💖")
+        # Esto imprimirá el error real en los Logs de Render
+        print(f"DIAGNÓSTICO TÉCNICO: {str(e)}")
+        bot.reply_to(message, "¡Ay, corazón! Tuve un pequeño tropiezo técnico. ¿Me lo podrías repetir? 💖")
 
 # --- EJECUCIÓN ---
 def run_web():
-    # Render usa el puerto 10000 por defecto o el que asigne la variable de entorno
-    port = int(os.environ.get("PORT", 7860))
+    port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
 
 if __name__ == "__main__":
-    # Hilo para que el servidor web mantenga vivo el servicio en Render
     threading.Thread(target=run_web, daemon=True).start()
-    print("Broken7CircuitBot encendido y listo para amar...")
-    
-    # Bucle de conexión para el bot
+    print("Bot encendido con nueva llave...")
     while True:
         try:
             bot.polling(none_stop=True, interval=0, timeout=40)
         except Exception as e:
-            print(f"Reconectando... {e}")
+            print(f"Reconectando bot... {e}")
             time.sleep(10)
