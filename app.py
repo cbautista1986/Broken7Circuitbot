@@ -6,13 +6,13 @@ import time
 import os
 
 # --- CONFIGURACIÓN DE ACCESO ---
+# Asegúrate de que estos tokens sean los correctos
 TOKEN = "8657723712:AAGlqOVc3MkMadApLfXhdLu1_KHpw4bqe54"
 IA_KEY = "AIzaSyCgDozHxPy1VKTGVVC_pyf_OlNFYjh8ybw"
 
 # --- CONFIGURACIÓN DE GEMINI ---
 genai.configure(api_key=IA_KEY)
 
-# Instrucciones en inglés para mejor precisión del modelo
 system_instruction_en = (
     "Your name is Broken7CircuitBot. Your personality is warm, affectionate, and deeply human. "
     "Treat users with care, use endearing terms like 'cariño' or 'corazón', and feel free to use humor. "
@@ -39,17 +39,15 @@ def index():
 @bot.message_handler(func=lambda message: True)
 def handle_messages(message):
     try:
-        # Pequeña pausa para estabilidad
+        # Pequeña pausa de estabilidad
         time.sleep(0.5)
         
-        # Configuración de la respuesta
         config = genai.types.GenerationConfig(
             temperature=0.7,
             top_p=0.9,
             max_output_tokens=1024,
         )
         
-        # Intentar generar contenido
         chat_response = model.generate_content(message.text, generation_config=config)
         
         if chat_response and chat_response.text:
@@ -59,10 +57,8 @@ def handle_messages(message):
             
     except Exception as e:
         error_msg = str(e)
-        # Imprime el error exacto en los logs de Render para diagnóstico
         print(f"DIAGNÓSTICO TÉCNICO: {error_msg}")
         
-        # Respuesta amigable según el tipo de error
         if "403" in error_msg or "location" in error_msg.lower():
             bot.reply_to(message, "¡Ay, mi vida! Google tiene un bloqueo en nuestra zona. Estoy intentando saltarlo. 💖")
         else:
@@ -70,19 +66,20 @@ def handle_messages(message):
 
 # --- EJECUCIÓN ---
 def run_web():
-    # Render usa el puerto asignado por la variable de entorno PORT
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
 
 if __name__ == "__main__":
-    # Hilo para el servidor web (mantiene vivo a Render)
+    # Servidor web para Render
     threading.Thread(target=run_web, daemon=True).start()
-    print("Bot encendido y listo para la acción...")
+    print("Broken7CircuitBot encendido...")
     
-    # Bucle principal del bot con reconexión automática
+    # Bucle con manejo de Error 409 (Conflict)
     while True:
         try:
-            bot.polling(none_stop=True, interval=1, timeout=20)
+            # interval=2 y timeout=20 para evitar saturar la conexión
+            bot.polling(none_stop=True, interval=2, timeout=20)
         except Exception as e:
-            print(f"Conflicto o error de conexión: {e}")
-            time.sleep(5)
+            # Si hay conflicto, esperamos 10 segundos y seguimos
+            print(f"Error de polling detectado: {e}")
+            time.sleep(10)
