@@ -5,13 +5,12 @@ import threading
 import os
 import time
 
-# --- CONFIGURACIÓN DIRECTA (Temporalmente) ---
-TOKEN = "8657723712:AAE2pkZZL4F26nZtNjPtkYeqfL3qEtPPvNU"
-IA_KEY = "AIzaSyCgDozHxPy1VKTGVVC_pyf_OlNFYjh8ybw"
+# --- CONFIGURACIÓN SEGURA Y DEFINITIVA ---
+# Estos nombres deben coincidir con lo que pusiste en Render
+TOKEN = os.environ.get("TELEGRAM_KEY") 
+IA_KEY = os.environ.get("GEMINI_KEY")
 
 genai.configure(api_key=IA_KEY)
-model = genai.GenerativeModel('gemini-1.5-flash')
-
 bot = telebot.TeleBot(TOKEN, threaded=False)
 app = Flask(__name__)
 
@@ -22,18 +21,16 @@ def health():
 @bot.message_handler(func=lambda message: True)
 def handle_messages(message):
     try:
-        # Aquí le pedimos a Gemini que piense
+        # Aquí la IA procesa tu mensaje
         model_flash = genai.GenerativeModel('gemini-1.5-flash')
         chat_response = model_flash.generate_content(message.text)
         
-        # Si Gemini nos da una respuesta, la enviamos a Telegram
         if chat_response and chat_response.text:
             bot.reply_to(message, chat_response.text)
         else:
             bot.reply_to(message, "Cariño, me quedé en blanco. ¿Qué me decías? 💖")
             
     except Exception as e:
-        # Esto nos dirá el error real en los Logs de Render
         print(f"DIAGNÓSTICO TÉCNICO IA: {str(e)}")
         bot.reply_to(message, "¡Ay, mi vida! Tuve un pequeño hipo técnico. ¿Me repites? 💖")
 
@@ -45,22 +42,20 @@ if __name__ == "__main__":
     # 1. Arrancar el servidor web para Render
     threading.Thread(target=run_server, daemon=True).start()
     
-    # 2. LIMPIEZA AGRESIVA: Matamos cualquier conexión previa
+    # 2. LIMPIEZA: Cerramos cualquier sesión vieja
     print("Limpiando conexiones anteriores...")
     try:
         bot.remove_webhook()
-        # Esperamos un poco más para que Telegram se entere
         time.sleep(3) 
     except:
         pass
         
     print("Broken7CircuitBot encendido y escuchando...")
     
-    # 3. Bucle con intervalo de 3 segundos para que no choque con versiones viejas
+    # 3. Bucle para recibir mensajes
     while True:
         try:
             bot.polling(none_stop=True, interval=3, timeout=20)
         except Exception as e:
-            # Si hay conflicto, esperamos 15 segundos antes de reintentar
             print(f"Conflicto o error: {e}")
             time.sleep(15)
