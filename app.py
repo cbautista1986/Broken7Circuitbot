@@ -22,13 +22,20 @@ def health():
 @bot.message_handler(func=lambda message: True)
 def handle_messages(message):
     try:
-        # Respuesta de la IA
-        response = model.generate_content(message.text)
-        if response.text:
-            bot.reply_to(message, response.text)
+        # Aquí le pedimos a Gemini que piense
+        model_flash = genai.GenerativeModel('gemini-1.5-flash')
+        chat_response = model_flash.generate_content(message.text)
+        
+        # Si Gemini nos da una respuesta, la enviamos a Telegram
+        if chat_response and chat_response.text:
+            bot.reply_to(message, chat_response.text)
+        else:
+            bot.reply_to(message, "Cariño, me quedé en blanco. ¿Qué me decías? 💖")
+            
     except Exception as e:
-        print(f"Error en Gemini: {e}")
-        bot.reply_to(message, "¡Ay, mi vida! Me distraje un segundo. ¿Qué decías? 💖")
+        # Esto nos dirá el error real en los Logs de Render
+        print(f"DIAGNÓSTICO TÉCNICO IA: {str(e)}")
+        bot.reply_to(message, "¡Ay, mi vida! Tuve un pequeño hipo técnico. ¿Me repites? 💖")
 
 def run_server():
     port = int(os.environ.get("PORT", 10000))
