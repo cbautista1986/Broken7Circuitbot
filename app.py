@@ -46,4 +46,4 @@ if __name__ == "__main__":
     
     print("Broken7CircuitBot encendido...")
     # Bucle infinito para recibir mensajes
-    bot.infinity_polling(timeout=20, long_polling_timeout=10, restart_on_change=True)
+    bot.infinity_polling(timeout=20, long_polling_timeout=10)
